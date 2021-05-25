@@ -75,7 +75,7 @@ class VocDataLoader(BaseDataLoader):
                 ymax = float(obj['bndbox']['ymax']) / h
                 ymin = float(obj['bndbox']['ymin']) / h
 
-                anno.append([labels_map[obj['name']], xmax, xmin, ymax, ymin])
+                anno.append([labels_map[obj['name']], xmin, xmax, ymin, ymax])
                 cnt += 1
             
             while cnt < 30:

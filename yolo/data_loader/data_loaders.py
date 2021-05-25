@@ -37,6 +37,8 @@ class VocDataLoader(BaseDataLoader):
         super().__init__(self.dataset, batch_size, shuffle, validation_split, num_workers)
 
     def anotations_tranform(x):
+        if (type(x) != dict): return x
+
         labels_map = {  'aeroplane' : 1,
                         'bicycle' : 2,
                         'bird' : 3, 
@@ -99,7 +101,7 @@ if __name__ == '__main__':
     data_loader = VocDataLoader("../data", 4, num_workers=4)
     for batch_idx, (data, target) in enumerate(data_loader):
         target = VocDataLoader.anotations_tranform(target)
-        # print(batch_idx, data.shape, target.shape)
+        print(batch_idx, data.shape, target.shape)
         # print(batch_idx, data.shape, json.dumps(target, indent=4, sort_keys=True))
         
         break

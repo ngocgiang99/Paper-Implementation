@@ -1,3 +1,4 @@
+from torch.utils.data.dataloader import T
 from torchvision import datasets, transforms
 from base import BaseDataLoader
 
@@ -23,9 +24,10 @@ class VocDataLoader(BaseDataLoader):
     Pascal VOC dataset loader using BaseDataLoader
     """
     def __init__(self, data_dir, batch_size, shuffle=True, validation_split=0.0, num_workers=1, grid_size=7, nof_box=2):
+        self.img_size = (224, 224)
         trsfm = transforms.Compose([
             # transforms.ToTensor(),
-            transforms.Resize((224, 224)),
+            transforms.Resize(self.img_size),
             transforms.ToTensor(),
             transforms.Normalize((0.1307,0.1307,0.1307), (0.3081,0.3081,0.3081)),
             # transforms.ToTensor(),
@@ -64,33 +66,46 @@ class VocDataLoader(BaseDataLoader):
         
         S = self.grid_size
         B = self.nof_box
-        try:
-            w = x['annotation']['size']['width']
-            h = x['annotation']['size']['height']
-            
-            w = float(w)
-            h = float(h)
+        img_size = torch.FloatTensor(self.img_size)
 
-            cnt = 0
-            anno = []
-            for obj in x['annotation']['object']:
-                xmax = float(obj['bndbox']['xmax']) / w
-                xmin = float(obj['bndbox']['xmin']) / w
-                ymax = float(obj['bndbox']['ymax']) / h
-                ymin = float(obj['bndbox']['ymin']) / h
+        w = x['annotation']['size']['width']
+        h = x['annotation']['size']['height']
+        
+        w = float(w)
+        h = float(h)
 
-                anno.append([xmin, ymin, xmax-xmin, ymax-ymin, labels_map[obj['name']]])
-                cnt += 1
-            
-            while cnt < 30:
-                anno.append([-1, -1, -1, -1, -1])
-                cnt += 1
-            
-            anno = torch.FloatTensor(anno)
-            print(anno.shape)
-            return anno
-        except:
-            print(x)
+        target = torch.zeros((S, S, 5*B + len(labels_map)))
+        for obj in x['annotation']['object']:
+
+            xmax = float(obj['bndbox']['xmax']) / w
+            xmin = float(obj['bndbox']['xmin']) / w
+            ymax = float(obj['bndbox']['ymax']) / h
+            ymin = float(obj['bndbox']['ymin']) / h
+
+            xy = torch.FloatTensor([xmin, ymin])
+            wh = torch.FloatTensor([xmax-xmin, ymax-ymin])
+
+            xy /= img_size
+            wh /= img_size
+
+            uv = (xy * S).ceil()-1
+            u,v = int(uv[0]), int(uv[1])
+
+            target[u,v, 4] = 1
+            target[u,v, 9] = 1
+            target[u,v, int(labels_map[obj['name']]) + 9] = 1
+
+            uv /= S
+            delta_xy = xy - uv
+            target[u, v, 0:2] = delta_xy
+            target[u, v, 2:4] = wh
+            target[u, v, 5:7] = delta_xy
+            target[u, v, 7:9] = wh
+        
+        # target = torch.FloatTensor(target)
+        print(target.shape)
+        return target
+
 
 
 

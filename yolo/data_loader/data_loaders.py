@@ -103,7 +103,7 @@ class VocDataLoader(BaseDataLoader):
             target[u, v, 7:9] = wh
         
         # target = torch.FloatTensor(target)
-        print(target.shape)
+        # print(target.shape)
         return target
 
 

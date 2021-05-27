@@ -22,7 +22,7 @@ class VocDataLoader(BaseDataLoader):
     """
     Pascal VOC dataset loader using BaseDataLoader
     """
-    def __init__(self, data_dir, batch_size, shuffle=True, validation_split=0.0, num_workers=1, training=True):
+    def __init__(self, data_dir, batch_size, shuffle=True, validation_split=0.0, num_workers=1, grid_size=7, nof_box=2):
         trsfm = transforms.Compose([
             # transforms.ToTensor(),
             transforms.Resize((224, 224)),
@@ -30,13 +30,15 @@ class VocDataLoader(BaseDataLoader):
             transforms.Normalize((0.1307,0.1307,0.1307), (0.3081,0.3081,0.3081)),
             # transforms.ToTensor(),
         ])
+        self.grid_size = grid_size
+        self.nof_box = nof_box
 
-        target_tranform = VocDataLoader.anotations_tranform
+        target_tranform = self.anotations_tranform
         self.data_dir = data_dir
         self.dataset = datasets.VOCDetection(self.data_dir, image_set="trainval", download=False, transform=trsfm, target_transform=target_tranform)
         super().__init__(self.dataset, batch_size, shuffle, validation_split, num_workers)
 
-    def anotations_tranform(x):
+    def anotations_tranform(self, x):
         if (type(x) != dict): return x
 
         labels_map = {  'aeroplane' : 1,
@@ -60,6 +62,8 @@ class VocDataLoader(BaseDataLoader):
                         'train' : 19,
                         'tvmonitor' : 20}
         
+        S = self.grid_size
+        B = self.nof_box
         try:
             w = x['annotation']['size']['width']
             h = x['annotation']['size']['height']
@@ -75,7 +79,7 @@ class VocDataLoader(BaseDataLoader):
                 ymax = float(obj['bndbox']['ymax']) / h
                 ymin = float(obj['bndbox']['ymin']) / h
 
-                anno.append([labels_map[obj['name']], xmin, xmax, ymin, ymax])
+                anno.append([xmin, ymin, xmax-xmin, ymax-ymin, labels_map[obj['name']]])
                 cnt += 1
             
             while cnt < 30:
@@ -90,17 +94,13 @@ class VocDataLoader(BaseDataLoader):
 
 
 
-
-
-
-
 if __name__ == '__main__':
     import os
     import json
     # print(os.getcwd())
     data_loader = VocDataLoader("../data", 4, num_workers=4)
     for batch_idx, (data, target) in enumerate(data_loader):
-        target = VocDataLoader.anotations_tranform(target)
+        # target = VocDataLoader.anotations_tranform(target)
         print(batch_idx, data.shape, target.shape)
         # print(batch_idx, data.shape, json.dumps(target, indent=4, sort_keys=True))
         

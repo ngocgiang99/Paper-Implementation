@@ -91,15 +91,6 @@ def compute_iou(out_yolo, voc_anno):
     x_right = torch.min(bb1['x2'], bb2['x2'])
     y_bottom = torch.min(bb1['y2'], bb2['y2'])
 
-    print(bb1)
-    print(bb2)
-    print(x_left)
-    print(x_right)
-    print(y_top)
-    print(y_bottom)
-
-    
-
     # The intersection of two axis-aligned bounding boxes is always an
     # axis-aligned bounding box
     intersection_area = (x_right - x_left) * (y_bottom - y_top)
@@ -119,8 +110,8 @@ def compute_iou(out_yolo, voc_anno):
     # area and dividing it by the sum of prediction + ground-truth
     # areas - the interesection area
     iou = intersection_area / (bb1_area + bb2_area - intersection_area)
-    print(intersection_area)
-    print(bb1_area + bb2_area - intersection_area)
+    # print(intersection_area)
+    # print(bb1_area + bb2_area - intersection_area)
     assert (iou >= 0.0).any(), print(iou)
     assert (iou <= 1.0).any()
     return iou

@@ -157,8 +157,7 @@ class YoloV1Trainer(BaseTrainer):
 
             self.optimizer.zero_grad()
             output = self.model(data)
-            print("output from trainer: ")
-            print(output)
+            # print("output from trainer: ")
             loss = self.criterion(output, target, hyper_param)
             loss.backward()
             self.optimizer.step()

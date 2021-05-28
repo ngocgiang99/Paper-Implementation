@@ -54,30 +54,20 @@ class YoloV1(BaseModel):
             nn.Dropout(0.2),
             nn.Linear(1024, S * S * (B * 5 + num_classes))
         )
-        # self.dense1 = 
-        # self.dense2 = 
         self.hyper_param = {    'S': S,
                                 'B': B,
                                 'C': num_classes}
 
     def forward(self, x):
-        print("input")
-        # print(x)
-
         x = self.backbone(x)
-        print(x)
         x = self.down_shape1(x)
         x = x.view(x.size(0), -1)
         x = self.classifier(x)
-        # # print(x.shape)
-        # x = self.dense1(x)
-        # x = self.dense2(x)
 
         S = self.hyper_param['S']
         B = self.hyper_param['B']
         C = self.hyper_param['C']
         x = x.view(-1, S, S, 5*B + C)
-        # print(x)
         x = torch.sigmoid(x)
         return x
 

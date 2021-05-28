@@ -24,12 +24,12 @@ class VocDataLoader(BaseDataLoader):
     Pascal VOC dataset loader using BaseDataLoader
     """
     def __init__(self, data_dir, batch_size, shuffle=True, validation_split=0.0, num_workers=1, grid_size=7, nof_box=2):
-        self.img_size = (224, 224)
+        self.img_size = (448, 448)
         trsfm = transforms.Compose([
             # transforms.ToTensor(),
             transforms.Resize(self.img_size),
             transforms.ToTensor(),
-            transforms.Normalize((0.1307,0.1307,0.1307), (0.3081,0.3081,0.3081)),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
             # transforms.ToTensor(),
         ])
         self.grid_size = grid_size

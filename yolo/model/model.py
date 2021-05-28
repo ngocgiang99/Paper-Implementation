@@ -40,37 +40,60 @@ class YoloV1(BaseModel):
         super().__init__()
         self.backbone = models.googlenet(True)
         self.backbone = nn.Sequential(*list(self.backbone.children())[:-3])
+        # print(self.backbone)
         
+        self.down_shape1 = nn.Sequential(
+            nn.Conv2d(1024, 256, kernel_size=(3,3), padding=1),
+            nn.BatchNorm2d(256),
+            nn.MaxPool2d(2,2)
+        )
+
         
-        self.dense1 = nn.Linear(1024 * 7 * 7, 4096)
-        self.dense2 = nn.Linear(4096, S * S * (B * 5 + num_classes))
+        self.classifier = nn.Sequential(
+            nn.Linear(256 * 7 * 7, 1024),
+            nn.Dropout(0.2),
+            nn.Linear(1024, S * S * (B * 5 + num_classes))
+        )
+        # self.dense1 = 
+        # self.dense2 = 
         self.hyper_param = {    'S': S,
                                 'B': B,
                                 'C': num_classes}
 
     def forward(self, x):
+        print("input")
+        # print(x)
 
         x = self.backbone(x)
+        print(x)
+        x = self.down_shape1(x)
         x = x.view(x.size(0), -1)
-        # print(x.shape)
-        x = self.dense1(x)
-        x = self.dense2(x)
+        x = self.classifier(x)
+        # # print(x.shape)
+        # x = self.dense1(x)
+        # x = self.dense2(x)
 
         S = self.hyper_param['S']
         B = self.hyper_param['B']
         C = self.hyper_param['C']
-        x = x.view(S, S, 5*B + C)
-
+        x = x.view(-1, S, S, 5*B + C)
+        # print(x)
+        x = torch.sigmoid(x)
         return x
 
 
 if __name__ == '__main__':
     model = YoloV1()
+    model.cuda()
 
-    tensor = torch.rand(1,3,224,224)
+    from torchsummary import summary
+    summary(model, (3, 448, 448))
+
+
+    # tensor = torch.rand(1,3,448,448)
     
-    x = model(tensor)
-    print(x.shape)
+    # x = model(tensor)
+    # print(x.shape)
 
 
 

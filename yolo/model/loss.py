@@ -40,7 +40,7 @@ def yolov1_loss(output, target, hyper_param):
     target_obj_iou = torch.FloatTensor(target_box.shape)
 
     coo_response_obj = torch.zeros(target_box.shape, dtype=torch.bool)
-    print(coo_response_obj.shape)
+    # print(coo_response_obj.shape)
 
     for i in range(0, pred_box.shape[0], 2):
         o_box = pred_box[i:i+2]

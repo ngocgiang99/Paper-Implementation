@@ -134,6 +134,13 @@ class YoloV1Trainer(BaseTrainer):
 
         self.train_metrics = MetricTracker('loss', *[m.__name__ for m in self.metric_ftns], writer=self.writer)
         self.valid_metrics = MetricTracker('loss', *[m.__name__ for m in self.metric_ftns], writer=self.writer)
+        self.hyper_param = {
+            'S': 7,
+            'B': 2,
+            'C': 20,
+            'lbd_coord': 5,
+            'lbd_noobj': 0.5
+        }
 
     def _train_epoch(self, epoch):
         """
@@ -143,13 +150,7 @@ class YoloV1Trainer(BaseTrainer):
         :return: A log that contains average loss and metric in this epoch.
         """
 
-        hyper_param = {
-            'S': 7,
-            'B': 2,
-            'C': 20,
-            'lbd_coord': 5,
-            'lbd_noobj': 0.5
-        }
+        
         self.model.train()
         self.train_metrics.reset()
         for batch_idx, (data, target) in enumerate(self.data_loader):
@@ -158,7 +159,7 @@ class YoloV1Trainer(BaseTrainer):
             self.optimizer.zero_grad()
             output = self.model(data)
             # print("output from trainer: ")
-            loss = self.criterion(output, target, hyper_param)
+            loss = self.criterion(output, target, self.hyper_param)
             loss.backward()
             self.optimizer.step()
 
@@ -200,7 +201,7 @@ class YoloV1Trainer(BaseTrainer):
                 data, target = data.to(self.device), target.to(self.device)
 
                 output = self.model(data)
-                loss = self.criterion(output, target)
+                loss = self.criterion(output, target, self.hyper_param)
 
                 self.writer.set_step((epoch - 1) * len(self.valid_data_loader) + batch_idx, 'valid')
                 self.valid_metrics.update('loss', loss.item())

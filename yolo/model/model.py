@@ -51,6 +51,7 @@ class YoloV1(BaseModel):
         
         self.classifier = nn.Sequential(
             nn.Linear(256 * 7 * 7, 1024),
+            nn.BatchNorm1d(1024),
             nn.Dropout(0.2),
             nn.Linear(1024, S * S * (B * 5 + num_classes))
         )

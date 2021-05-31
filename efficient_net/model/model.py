@@ -133,7 +133,7 @@ class EfficientNetModel(BaseModel):
     def forward(self, x):
         x = self.model(x)
         x = x.view(-1, self.num_classes)
-        return x
+        return F.softmax(x)
 
 
 if __name__ == '__main__':
@@ -148,6 +148,7 @@ if __name__ == '__main__':
 
     x = model(x)
     print(x.shape)
+    print(x)
 
     target = torch.randint(10, (4,)).cuda()
     print(target)

@@ -68,28 +68,68 @@ class BottleneckResidualBlock(nn.Module):
             return x + y
         else:
             return y
+
+class MBConvBlock(nn.Module):
+    def __init__(self, D_in, D_out, t, n, kernel_size=3, stride=2):
+        super().__init__()
+
+        self.block = nn.Sequential()
+        for i in range(n):
+            if i == 0:
+                self.block.add_module(
+                    f'Bottleneck Residual Block {i}', BottleneckResidualBlock(D_in, t, D_out, kernel_size, stride)
+                )
+            else:
+                self.block.add_module(
+                    f'Bottleneck Residual Block {i}', BottleneckResidualBlock(D_out, t, D_out, kernel_size, 1)
+                )
+    def forward(self, x):
+        return self.block(x)
+
+
 class EfficientNetModel(BaseModel):
     def __init__(self, num_classes=10):
         super().__init__()
+
+        self.model_configure = [
+            [32, 16, 1, 1, 3, 2],
+            [16, 24, 6, 2, 3, 1],
+            [32, 16, 1, 2, 5, 2],
+            [32, 16, 1, 3, 3, 2],
+            [32, 16, 1, 3, 5, 2],
+            [32, 16, 1, 4, 5, 1],
+            [32, 16, 1, 1, 3, 2],
+        ]
+
+        self.model = nn.Sequential()
+
+        self.model.add_module(
+            nn.Conv2d(3, 32, kernel_size=3, stride = 2),
+            nn.BatchNorm2d(32),
+            nn.ReLU6()
+        )
+
+        for d_in, d_out, t, n, k, s in self.model_configure:
+            print(d_in, d_out, t, n, k , s)
 
 
 if __name__ == '__main__':
     device, device_ids = prepare_device(1)
     print(device, device_ids)
 
-    x = torch.rand(10, 32, 28, 28)
+    x = torch.rand(4, 32, 112, 112)
     x = x.to(device)
-    print(type(x))
 
-    bottle = BottleneckResidualBlock(32, 1, 16, 3, 1)
-    bottle.to(device)
-    # print(type(bottle))
+    mb_block = MBConvBlock(32, 16, 1, 1, 3, 1)
+    mb_block.to(device)
 
-    model = MnistModel(10)
-    # model.to(device)
-
-    # x = model(x)
-
-    x = bottle(x)
+    x = mb_block(x)
     print(x.shape)
+
+    mb_block2 = MBConvBlock(16, 24, 6, 2, 3, 2)
+    mb_block2.to(device)
+
+    x = mb_block2(x)
+    print(x.shape)
+
 

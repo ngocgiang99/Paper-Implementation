@@ -92,44 +92,69 @@ class EfficientNetModel(BaseModel):
         super().__init__()
 
         self.model_configure = [
-            [32, 16, 1, 1, 3, 2],
-            [16, 24, 6, 2, 3, 1],
-            [32, 16, 1, 2, 5, 2],
-            [32, 16, 1, 3, 3, 2],
-            [32, 16, 1, 3, 5, 2],
-            [32, 16, 1, 4, 5, 1],
-            [32, 16, 1, 1, 3, 2],
+            [32, 16, 1, 1, 3, 1],
+            [16, 24, 6, 2, 3, 2],
+            [24, 40, 6, 2, 5, 2],
+            [40, 80, 6, 3, 3, 2],
+            [80, 112, 6, 3, 5, 1],
+            [112, 192, 6, 4, 5, 2],
+            [192, 320, 6, 1, 3, 1],
         ]
 
+        self.num_classes = num_classes
         self.model = nn.Sequential()
 
         self.model.add_module(
-            nn.Conv2d(3, 32, kernel_size=3, stride = 2),
-            nn.BatchNorm2d(32),
-            nn.ReLU6()
+            'conv3x3_1', nn.Sequential(
+                nn.Conv2d(3, 32, kernel_size=3, padding=1, stride = 2),
+                nn.BatchNorm2d(32),
+                nn.ReLU6()
+            )
         )
 
-        for d_in, d_out, t, n, k, s in self.model_configure:
-            print(d_in, d_out, t, n, k , s)
+        for i, (d_in, d_out, t, n, k, s) in enumerate(self.model_configure):
+            # print(conf)
+            # d_in, d_out, t, n, k, s = conf
+            # print(d_in, d_out, t, n, k, s)
+            self.model.add_module(
+                f'MBConv Block {i}', MBConvBlock(d_in, d_out, t, n, k, s)
+            )
+
+        self.model.add_module(
+            'conv1x1_1', nn.Sequential(
+                nn.Conv2d(320, 1280, 1),
+                nn.BatchNorm2d(1280),
+                nn.ReLU6(),
+                nn.AvgPool2d(7),
+                nn.Conv2d(1280, num_classes, 1)
+            )
+        )
+
+    def forward(self, x):
+        x = self.model(x)
+        x = x.view(-1, self.num_classes)
+        return x
 
 
 if __name__ == '__main__':
     device, device_ids = prepare_device(1)
     print(device, device_ids)
 
-    x = torch.rand(4, 32, 112, 112)
+    x = torch.rand(4, 3, 224, 224)
     x = x.to(device)
 
-    mb_block = MBConvBlock(32, 16, 1, 1, 3, 1)
-    mb_block.to(device)
+    model = EfficientNetModel(10)
+    model.to(device)
 
-    x = mb_block(x)
+    x = model(x)
     print(x.shape)
 
-    mb_block2 = MBConvBlock(16, 24, 6, 2, 3, 2)
-    mb_block2.to(device)
+    target = torch.randint(10, (4,)).cuda()
+    print(target)
 
-    x = mb_block2(x)
-    print(x.shape)
+    loss = F.cross_entropy(x, target)
+    print(loss)
+
+    
 
 
